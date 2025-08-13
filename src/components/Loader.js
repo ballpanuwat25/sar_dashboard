@@ -1,25 +1,18 @@
-import { Html, Head, Main, NextScript } from 'next/document';
-
-export default function Document() {
-  return (
-    <Html>
-      <Head>
-        <style>{`
-          #loader-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(30, 30, 30, 1); /* ทำให้เห็น loader ชัดเจน */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-          }
-
+export default function Loader() {
+    return (
+      <>
+        <div className="loader">
+          <span className="bar"></span>
+          <span className="bar"></span>
+          <span className="bar"></span>
+        </div>
+  
+        <style jsx>{`
           .loader {
             display: flex;
             align-items: center;
           }
-
+  
           .bar {
             display: inline-block;
             width: 4px;
@@ -29,16 +22,16 @@ export default function Document() {
             margin: 0 3px;
             animation: scale-up4 1s linear infinite;
           }
-
+  
           .bar:nth-child(2) {
             height: 35px;
             animation-delay: 0.25s;
           }
-
+  
           .bar:nth-child(3) {
             animation-delay: 0.5s;
           }
-
+  
           @keyframes scale-up4 {
             0%, 40%, 100% {
               transform: scaleY(1);
@@ -50,16 +43,7 @@ export default function Document() {
             }
           }
         `}</style>
-      </Head>
-      <body>
-        <div id="loader-overlay" className="loader">
-          <span className="bar"></span>
-          <span className="bar"></span>
-          <span className="bar"></span>
-        </div>
-        <Main />
-        <NextScript />
-      </body>
-    </Html>
-  );
-}
+      </>
+    );
+  }
+  
