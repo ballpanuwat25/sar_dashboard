@@ -186,7 +186,7 @@ const AccordionTable = forwardRef((props, ref) => {
 
                           <div className="mt-1">
                               {screen.users.map((u, i) => {
-                                const nearEnd = isNearEndDate(u.endDate);
+                                const nearEnd = isNearEndDate(u.expDate);
                                 return(
                                   <div key={i} className="ml-4">
                                       <span className={`font-medium ${nearEnd}`}>@ {u.userName ?? u.userId}</span> - {u.packageName} | start: {u.startDate}, end: {u.expDate}
