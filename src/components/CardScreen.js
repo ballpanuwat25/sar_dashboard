@@ -29,6 +29,15 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
         setIsModalOpen(true);
     };
 
+    function addDays(dateStr, daysToAdd) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + daysToAdd);
+        const yyyy = date.getFullYear();
+        const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dd = date.getDate().toString().padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
     const saveModal = async () => {
     
         try {
@@ -37,29 +46,44 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
                 ...s,
                 users: [...s.users]
             }));
+
+            let newExpired = '';
     
             // หาผู้ใช้ที่เรากำลังแก้ไข
             let movedUser = null;
             for (let s of updatedScreens) {
-                const index = s.users.findIndex(u => u.startDate === createdDate); // ใช้ startDate เป็นตัวระบุชั่วคราว
+                const index = s.users.findIndex(u => u.orderId === orderId); // ใช้ orderId แทนเพื่อความชัดเจน
                 if (index !== -1) {
-                    movedUser = s.users.splice(index, 1)[0]; // ลบออกจาก screen เก่า
+                    // ไม่ว่าเราจะย้ายหรือไม่ ก็จะเจอ user ตรงนี้
+                    movedUser = s.users[index];
+
+                    const startDate = createdDate.split(' ')[0]
+                    const startTime = createdDate.split(' ')[1]
+                    let endDate = addDays(startDate, s.users[index].days)
+                        endDate = endDate + ' ' + startTime
+
+                        newExpired = endDate
+
+                    // ถ้าจอยังเหมือนเดิม → แก้ createdDate ตรงนี้ได้เลย
+                    if (s.screenId === screenId) {
+                        movedUser.startDate = createdDate;
+                        movedUser.expDate = newExpired;
+                    } else {
+                        // ถ้าจอเปลี่ยน → ลบออกจากจอเก่าแล้วไปใส่จอใหม่
+                        movedUser = s.users.splice(index, 1)[0];
+                        movedUser.startDate = createdDate;
+                        movedUser.expDate = newExpired;
+                        const targetScreen = updatedScreens.find(scr => scr.screenId === screenId);
+                        if (targetScreen) {
+                            targetScreen.users.push(movedUser);
+                        } else {
+                            updatedScreens.push({
+                                screenId: screenId,
+                                users: [movedUser]
+                            });
+                        }
+                    }
                     break;
-                }
-            }
-    
-            if (movedUser) {
-                movedUser.startDate = createdDate; // อัพเดต startDate ถ้าต้องการ
-                // ใส่เข้า screen ใหม่
-                const targetScreen = updatedScreens.find(s => s.screenId === screenId);
-                if (targetScreen) {
-                    targetScreen.users.push(movedUser);
-                } else {
-                    // ถ้าไม่มี screen ใหม่ใน array ก็สร้างขึ้นมา
-                    updatedScreens.push({
-                        screenId: screenId,
-                        users: [movedUser]
-                    });
                 }
             }
 
@@ -71,7 +95,9 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
                   },
                   body: JSON.stringify({
                     orderId: orderId,
-                    screenId: screenId
+                    screenId: screenId,
+                    createdDate: createdDate,
+                    expiredDate: newExpired
                   }),
                 });
             
@@ -107,28 +133,19 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
 
     function isNearEndDate(endDateStr) {
         if (!endDateStr) return false;
-      
-        // ฟังก์ชันช่วยตัดเวลาออก เหลือแค่วันที่เท่านั้น
-        function toDateOnly(dateInput) {
-          const d = new Date(dateInput);
-          d.setHours(0, 0, 0, 0);
-          return d;
-        }
-      
-        const now = toDateOnly(new Date());
-        const endDate = toDateOnly(endDateStr);
-      
-        const diffDays = (endDate - now) / (24 * 60 * 60 * 1000);
-      
+
+        const now = new Date();
+        const endDate = new Date(endDateStr);
+
+        const diffMs = endDate - now;
+        const diffDays = diffMs / (24 * 60 * 60 * 1000);
+
         if (diffDays < 0) {
-          // หมดไปแล้ว
-          return "text-red-500";
-        } else if (diffDays >= 0 && diffDays <= 1) {
-          // ใกล้หมดใน 1 วัน
-          return "text-orange-500";
+            return "text-red-500"; // หมดไปแล้ว
+        } else if (diffDays <= 1) {
+            return "text-orange-500"; // ใกล้หมด
         } else {
-          // ยังไม่ใกล้หมด
-          return "";
+            return "";
         }
     }
 

@@ -52,8 +52,6 @@ export default function Orders() {
             return;
           }
 
-          console.log('selected:',selected)
-
           let packageArr = [];
           if(selected.length > 0) {
             for(const s of selected) {
@@ -80,11 +78,7 @@ export default function Orders() {
 
           //add data to account
           const accountData = await fetchAccounts(accountId);
-          console.log('accountId: ', accountId)
-          console.log('accountData: ', accountData)
-
           const packageData = await fetchPackages(packageArr[0])
-          console.log('packageData: ', packageData)
 
           const days = packageData[0].Day
 
@@ -105,7 +99,8 @@ export default function Orders() {
                 accountId: accountId,
                 screenId: screenId,
                 totalPrice: totalPrice,
-                expiredDate: endDate
+                expiredDate: endDate,
+                days: days
               }),
             });
         
@@ -124,7 +119,8 @@ export default function Orders() {
                   "packageId": packageArr,
                   "startDate": formatDate,
                   "expDate": endDate,
-                  "orderId": data.insertId
+                  "orderId": data.insertId,
+                  "days": days
                 });
               }
             }
@@ -157,8 +153,6 @@ export default function Orders() {
       try {
           const data = await fetchPackages();
           setPackages(data);
-
-          console.log('data:', data)
       } catch (error) {
           console.error('Error loading Packages:', error);
           toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
@@ -170,8 +164,6 @@ export default function Orders() {
       try {
           const data = await fetchAccounts();
           setAccounts(data);
-
-          console.log('data:', data)
       } catch (error) {
           console.error('Error loading Accounts:', error);
           toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');

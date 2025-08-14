@@ -118,7 +118,6 @@ const AccordionTable = forwardRef((props, ref) => {
   };
   
   return (
-    <div className="w-full">
       <div className="overflow-x-auto border border-zinc-600 rounded-lg shadow-sm">
         <table className="min-w-full divide-y divide-zinc-600 bg-zinc-800">
           <thead className="">
@@ -169,7 +168,6 @@ const AccordionTable = forwardRef((props, ref) => {
             ))}
           </tbody>
         </table>
-      </div>
 
       {isModalOpen && editingAccount && (
         <AccountModal

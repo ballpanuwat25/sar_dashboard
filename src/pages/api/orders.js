@@ -55,21 +55,21 @@ export default async function handler(req, res) {
         
         if (req.method === 'POST') {
             // รับข้อมูล user จาก body
-            const {userId, packageId, accountId, screenId, totalPrice, expiredDate } = req.body;
-            if (!userId || !packageId || !accountId || !screenId || !totalPrice || !expiredDate) {
+            const {userId, packageId, accountId, screenId, totalPrice, expiredDate, days } = req.body;
+            if (!userId || !packageId || !accountId || !screenId || !totalPrice || !expiredDate || !days) {
               return res.status(400).json({ error: "Missing required fields" });
             }
       
             const [result] = await connection.execute(
-              'INSERT INTO Orders (UserId, PackageId, AccountId, ScreenId, TotalPrice, CreatedDate, ModifiedDate, ExpiredDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-              [userId, packageId, accountId, screenId, totalPrice, formatDate, formatDate, expiredDate]
+              'INSERT INTO Orders (UserId, PackageId, AccountId, ScreenId, TotalPrice, CreatedDate, ModifiedDate, ExpiredDate, Days) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [userId, packageId, accountId, screenId, totalPrice, formatDate, formatDate, expiredDate, days]
             );
       
             return res.status(201).json({ message: "User created", insertId: result.insertId });
         }
 
         if (req.method === 'PATCH') {
-          const { orderId, isExpired, screenId } = req.body;
+          const { orderId, isExpired, screenId, createdDate, expiredDate } = req.body;
 
           const fields = [];
           const values = [];
@@ -82,6 +82,16 @@ export default async function handler(req, res) {
           if(screenId) {
             fields.push('ScreenId = ?');
             values.push(screenId);
+          }
+
+          if(createdDate) {
+            fields.push('CreatedDate = ?');
+            values.push(createdDate);
+          }
+
+          if(expiredDate) {
+            fields.push('ExpiredDate = ?');
+            values.push(expiredDate);
           }
           
           const sql = `UPDATE Orders SET ${fields.join(', ')} WHERE Id = ?`;

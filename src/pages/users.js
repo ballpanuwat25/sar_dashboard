@@ -25,7 +25,7 @@ export default function Users() {
     };
 
     const saveModal = async () => {
-        if (!id || !username) {
+        if (!username) {
             toast.warning("กรุณากรอกข้อมูลให้ครบ");
             return;
           }
@@ -37,7 +37,6 @@ export default function Users() {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                id: id,
                 username: username,
               }),
             });

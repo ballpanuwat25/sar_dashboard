@@ -67,7 +67,7 @@ export default function Page() {
   };
 
   const saveModal = async () => {
-    if (!id || !email || !password || !screens) {
+    if (!email || !password || !screens) {
       toast.warning("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
@@ -114,27 +114,17 @@ export default function Page() {
   };  
 
   return (
-    <main className="p-6 max-h-full h-full bg-zinc-800 rounded-lg">
-      <div className="w-full h-full flex flex-col justify-center items-center">
-
-        {
-          // isLoading ?
-          //   <Loader />
-          // :
-          <div className="w-full h-full">
-            <div className="flex flex-row justify-between items-center w-full mb-4">
-              <h1 className="text-2xl font-semibold">Accounts</h1>
-              <button
-                onClick={openModalForCreate}
-                className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
-              >
-                สร้าง
-              </button>
-            </div>
-            <AccordionTable setIsLoading={setIsLoading} ref={tableRef} />
-          </div>
-        }
-      </div>
+    <main className="p-6 max-h-screen bg-zinc-800 rounded-lg">
+        <div className="flex flex-row justify-between items-center w-full mb-4">
+          <h1 className="text-2xl font-semibold">Accounts</h1>
+          <button
+            onClick={openModalForCreate}
+            className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
+          >
+            สร้าง
+          </button>
+        </div>
+        <AccordionTable ref={tableRef} />
 
       {isModalOpen && (
         <AccountModal

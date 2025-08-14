@@ -14,19 +14,6 @@ export default function UserModal({
       <div className="absolute inset-0 bg-zinc-900 opacity-75"></div>  {/* background overlay */}
       <div className="relative bg-white rounded-lg p-6 w-96 max-w-full">
         <h2 className="text-xl font-bold mb-4 text-zinc-900">{action} User</h2>
-
-        {action == "เพิ่ม" ? 
-          <label className="block mb-2 text-zinc-900 font-semibold">
-            Id:
-            <input
-              type="text"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-            />
-          </label>
-        : <></>
-        }
         
         <label className="block mb-2 text-zinc-900 font-semibold">
           Username:

@@ -17,7 +17,7 @@ async function getLatestUserId() {
 async function genId() {
   const latest = await getLatestUserId();
   const num = latest ? parseInt(latest.replace('UID',''), 10) : 0;
-  return `UID${(num+1).toString().padStart(3,'0')}`;
+  return `UID${(num+1).toString().padStart(2,'0')}`;
 }
 
 export default async function handler(req, res) {
