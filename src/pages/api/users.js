@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+async function getLatestUserId() {
+  const [rows] = await connection.execute(
+    "SELECT Id FROM Users WHERE Id LIKE 'UID%' ORDER BY CAST(SUBSTRING(Id, 4) AS UNSIGNED) DESC LIMIT 1"
+  );
+  if (rows.length > 0) return rows[0].Id;
+  return null;
+}
+
+async function genId() {
+  const latest = await getLatestUserId();
+  const num = latest ? parseInt(latest.replace('UID',''), 10) : 0;
+  return `UID${(num+1).toString().padStart(3,'0')}`;
+}
+
 export default async function handler(req, res) {
   // ตอบ preflight CORS request
   if (req.method === 'OPTIONS') {
@@ -47,12 +61,12 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // รับข้อมูล user จาก body
-      const { id, username, ...rest } = req.body;
-      if (!id || !username) {
+      const { username } = req.body;
+      if (!username) {
         return res.status(400).json({ error: "Missing required fields: id or username" });
       }
 
-      console.log("formatDate: ", formatDate)
+      const id = await genId();
 
       const [result] = await connection.execute(
         'INSERT INTO Users (Id, Username, CreatedDate, ModifiedDate) VALUES (?, ?, ?, ?)',

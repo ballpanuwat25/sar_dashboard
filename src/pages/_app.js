@@ -5,6 +5,7 @@ import Loader from '../components/Loader';
 import LayoutWrapper from '../components/LayoutWrapper';
 import '../styles/globals.css';
 
+import { SearchProvider } from '@/context/SearchContext';
 import { ToastContainer } from 'react-toastify';
 
 export default function MyApp({ Component, pageProps }) {
@@ -87,9 +88,12 @@ export default function MyApp({ Component, pageProps }) {
           <Loader />
         </div>
       )}
-      <LayoutWrapper>
-        <Component {...pageProps} />
-      </LayoutWrapper>
+      
+      <SearchProvider>
+        <LayoutWrapper>
+          <Component {...pageProps} />
+        </LayoutWrapper>
+      </SearchProvider>
   </>
   );
 }

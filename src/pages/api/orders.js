@@ -43,7 +43,10 @@ export default async function handler(req, res) {
                 params = [id];
             }
 
-            const [packages] = await connection.execute('SELECT * FROM Orders');
+            const [packages] = await connection.execute(`
+              SELECT a.Id, a.UserId, b.Username, a.PackageId, a.AccountId, a.CreatedDate, a.ExpiredDate, a.ScreenId, a.isExpired, a.TotalPrice FROM Orders a
+              LEFT JOIN Users b ON a.UserId = b.Id
+            `);
 
             res.setHeader('Content-Type', 'application/json');
             res.setHeader('Access-Control-Allow-Origin', corsHeaders['Access-Control-Allow-Origin']);
@@ -52,20 +55,44 @@ export default async function handler(req, res) {
         
         if (req.method === 'POST') {
             // รับข้อมูล user จาก body
-            const {userId, packageId, accountId, screenId, totalPrice } = req.body;
-            if (!userId || !packageId || !accountId || !screenId || !totalPrice) {
+            const {userId, packageId, accountId, screenId, totalPrice, expiredDate } = req.body;
+            if (!userId || !packageId || !accountId || !screenId || !totalPrice || !expiredDate) {
               return res.status(400).json({ error: "Missing required fields" });
             }
       
             const [result] = await connection.execute(
-              'INSERT INTO Orders (UserId, PackageId, AccountId, ScreenId, TotalPrice, CreatedDate, ModifiedDate) VALUES (?, ?, ?, ?, ?, ?, ?)',
-              [userId, packageId, accountId, screenId, totalPrice, formatDate, formatDate]
+              'INSERT INTO Orders (UserId, PackageId, AccountId, ScreenId, TotalPrice, CreatedDate, ModifiedDate, ExpiredDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [userId, packageId, accountId, screenId, totalPrice, formatDate, formatDate, expiredDate]
             );
       
             return res.status(201).json({ message: "User created", insertId: result.insertId });
         }
+
+        if (req.method === 'PATCH') {
+          const { orderId, isExpired, screenId } = req.body;
+
+          const fields = [];
+          const values = [];
+
+          if(isExpired) {
+            fields.push('IsExpired = ?');
+            values.push(isExpired);
+          }
+
+          if(screenId) {
+            fields.push('ScreenId = ?');
+            values.push(screenId);
+          }
+          
+          const sql = `UPDATE Orders SET ${fields.join(', ')} WHERE Id = ?`;
+          values.push(orderId);
+
+          const [result] = await connection.execute(sql, values);
+    
+          return res.status(200).json({ message: "Orders updated", affectedRows: result.affectedRows });
+        }
         
-        res.setHeader('Allow', ['GET, POST']);
+        res.setHeader('Allow', ['GET, POST', 'PATCH', 'OPTIONS']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     } catch (error) {
       console.error('API Error:', error);

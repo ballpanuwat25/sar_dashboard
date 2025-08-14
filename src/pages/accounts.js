@@ -3,8 +3,10 @@
 import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 
-import AccordionTable from '../components/AccordionTable';
-import AccountModal from '../components/AccountModal.js';
+import AccordionTable from '@/components/AccordionTable';
+import AccountModal from '@/components/AccountModal.js';
+
+import Loader from '@/components/Loader';
 
 export default function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,6 +15,8 @@ export default function Page() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [screens, setScreens] = useState('');
+
+  const [isLoading, setIsLoading] = useState(true);
 
   const tableRef = useRef(null);
 
@@ -110,19 +114,26 @@ export default function Page() {
   };  
 
   return (
-    <main className="p-6 min-h-screen bg-zinc-800 rounded-lg">
+    <main className="p-6 max-h-full h-full bg-zinc-800 rounded-lg">
+      <div className="w-full h-full flex flex-col justify-center items-center">
 
-      <div className="w-full flex flex-col">
-        <div className="flex flex-row justify-between items-center w-full mb-4">
-          <h1 className="text-2xl font-semibold">Accounts</h1>
-          <button
-            onClick={openModalForCreate}
-            className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
-          >
-            สร้าง
-          </button>
-        </div>
-        <AccordionTable ref={tableRef} />
+        {
+          // isLoading ?
+          //   <Loader />
+          // :
+          <div className="w-full h-full">
+            <div className="flex flex-row justify-between items-center w-full mb-4">
+              <h1 className="text-2xl font-semibold">Accounts</h1>
+              <button
+                onClick={openModalForCreate}
+                className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
+              >
+                สร้าง
+              </button>
+            </div>
+            <AccordionTable setIsLoading={setIsLoading} ref={tableRef} />
+          </div>
+        }
       </div>
 
       {isModalOpen && (

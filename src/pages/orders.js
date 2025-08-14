@@ -22,6 +22,7 @@ export default function Orders() {
     const openModalForCreate = () => {
         setUserId('');
         setAccountId('');
+        setSelected([])
         setScreenId(1);
         setTotalPrice('');
         setIsModalOpen(true);
@@ -61,6 +62,36 @@ export default function Orders() {
           }
 
           const packageIdStr = packageArr.join(',')
+
+          const nowDate = new Date();
+          const localTime = new Date(nowDate.getTime() + 7 * 60 * 60 * 1000);
+          const formatDate =
+            localTime.getUTCFullYear() +
+            '-' +
+            String(localTime.getUTCMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(localTime.getUTCDate()).padStart(2, '0') +
+            ' ' +
+            String(localTime.getUTCHours()).padStart(2, '0') +
+            ':' +
+            String(localTime.getUTCMinutes()).padStart(2, '0') +
+            ':' +
+            String(localTime.getUTCSeconds()).padStart(2, '0');
+
+          //add data to account
+          const accountData = await fetchAccounts(accountId);
+          console.log('accountId: ', accountId)
+          console.log('accountData: ', accountData)
+
+          const packageData = await fetchPackages(packageArr[0])
+          console.log('packageData: ', packageData)
+
+          const days = packageData[0].Day
+
+          const startDate = formatDate.split(' ')[0]
+          const startTime = formatDate.split(' ')[1]
+          let endDate = addDays(startDate, days)
+              endDate = endDate + ' ' + startTime
         
           try {
             const res = await fetch('/api/orders', {
@@ -73,7 +104,8 @@ export default function Orders() {
                 packageId: packageIdStr,
                 accountId: accountId,
                 screenId: screenId,
-                totalPrice: totalPrice
+                totalPrice: totalPrice,
+                expiredDate: endDate
               }),
             });
         
@@ -84,55 +116,20 @@ export default function Orders() {
               return;
             }
 
-            const nowDate = new Date();
-            const localTime = new Date(nowDate.getTime() + 7 * 60 * 60 * 1000);
-            const formatDate =
-              localTime.getUTCFullYear() +
-              '-' +
-              String(localTime.getUTCMonth() + 1).padStart(2, '0') +
-              '-' +
-              String(localTime.getUTCDate()).padStart(2, '0') +
-              ' ' +
-              String(localTime.getUTCHours()).padStart(2, '0') +
-              ':' +
-              String(localTime.getUTCMinutes()).padStart(2, '0') +
-              ':' +
-              String(localTime.getUTCSeconds()).padStart(2, '0');
-
-            //add data to account
-            const accountData = await fetchAccounts(accountId);
-            console.log('accountId: ', accountId)
-            console.log('accountData: ', accountData)
-
-            const packageData = await fetchPackages(packageArr[0])
-            console.log('packageData: ', packageData)
-
-            const days = packageData[0].Day
-
-            const startDate = formatDate.split(' ')[0]
-            const startTime = formatDate.split(' ')[1]
-            let endDate = addDays(startDate, days)
-                endDate = endDate + ' ' + startTime
-
             let screens = accountData[0].Screens;
-            console.log('screens:', screens)
             for(const s of screens) {
               if(s.screenId == screenId) {
                 s.users.push({
                   "userId": userId,
+                  "packageId": packageArr,
                   "startDate": formatDate,
                   "expDate": endDate,
-                  "packageId": packageArr
-                })
+                  "orderId": data.insertId
+                });
               }
             }
 
-            try {
-              const result = await updateAccount(accountId, { Screens: screens });
-              console.log('AAAOOO: ',result.message); // "Account updated successfully"
-            } catch (err) {
-              console.error('BBBMMM: ', err.message);
-            }
+            await updateAccount(accountId, { Screens: screens });
         
             toast.success("เพิ่มบัญชีสำเร็จ");
             setIsModalOpen(false);

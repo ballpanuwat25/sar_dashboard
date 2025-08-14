@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
-import { fetchOrders } from '@/lib/api';
+import { fetchOrders, fetchAccounts, updateAccount } from '@/lib/api';
 import { toast } from 'react-toastify';
 
 import dynamic from 'next/dynamic';
@@ -8,7 +8,7 @@ const FontAwesomeIcon = dynamic(
     { ssr: false } 
 );
 
-import { faChevronUp, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faChevronUp, faChevronDown, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 const OrderTable = forwardRef((props, ref) => {
     const [orders, setOrders] = useState([]);
@@ -21,6 +21,15 @@ const OrderTable = forwardRef((props, ref) => {
       try {
         const data = await fetchOrders();
         setOrders(data);
+
+        console.log('data --> ', data)
+
+        let total = 0
+        for(const d of data) {
+            total += d.TotalPrice
+        }
+
+        console.log('total:' , total)
       } catch (error) {
         console.error('Error loading Orders:', error);
         toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
@@ -138,6 +147,85 @@ const OrderTable = forwardRef((props, ref) => {
         setCurrentPage((page) => Math.min(page + 1, totalPages));
     };
 
+    function isExpiredOrToday(dateString) {
+        // แยก YYYY-MM-DD HH:mm:ss
+        const [datePart, timePart] = dateString.split(' ');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute, second] = timePart.split(':').map(Number);
+    
+        // สร้าง Date แบบ local
+        const targetDate = new Date(year, month - 1, day, hour, minute, second);
+    
+        const now = new Date();
+    
+        return now >= targetDate;
+    }
+    
+    const setExpired = async (accountId, SID, UID, OID) => {
+        const accountData = await fetchAccounts(accountId);
+        let screens = accountData[0].Screens;
+
+        for(const s of screens) {
+            let screenId = s.screenId
+
+            if (screenId == SID) {
+                s.users = s.users.filter(user => {
+                    const shouldKeep = user.userId !== UID || !isExpiredOrToday(user.expDate);
+                    // console.log('a:', user.userId);
+                    // console.log('b:', user.expDate);
+                    // console.log('c:', shouldKeep);
+                    // console.log('d:', UID);
+                    return shouldKeep;
+                });
+            }
+        }
+
+        try {
+            const res = await fetch('/api/orders', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orderId: OID,
+                isExpired: 1,
+                screenId: SID
+              }),
+            });
+        
+            const data = await res.json();
+        
+            if (!res.ok) {
+              toast.error(data.error || 'เกิดข้อผิดพลาด');
+              return;
+            }
+
+        } catch (error) {
+            toast.error("เกิดข้อผิดพลาด: " + error.message);
+        }
+
+        const result = await updateAccount(accountId, { Screens: screens });
+        toast.success('อัพเดตสำเร็จ: ',result.message); // "Account updated successfully"
+
+        loadOrders();
+        
+    }
+
+    function isExpiredOrToday(dateString) {
+        const targetDate = new Date(dateString); // วันที่เป้าหมาย
+        const now = new Date(); // เวลาปัจจุบัน
+    
+        return now >= targetDate;
+    }
+
+    function checkIsExpired(isExpired) {
+        if(isExpired == 1) {
+            return true;
+        }
+
+        return false;
+    }
+
     return (
         <div>
             {/* Dropdown เลือกจำนวนแถว */}
@@ -181,17 +269,17 @@ const OrderTable = forwardRef((props, ref) => {
                 <table className="min-w-full divide-y divide-zinc-600 bg-zinc-800">
                     <thead>
                     <tr>
-                        <th
+                        {/* <th
                             className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
                             onClick={() => requestSort('Id')}
                         >
                             Id<SortArrow columnKey="Id" />
-                        </th>
+                        </th> */}
                         <th
                             className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
-                            onClick={() => requestSort('UserId')}
+                            onClick={() => requestSort('User')}
                         >
-                            UserId<SortArrow columnKey="UserId" />
+                            User<SortArrow columnKey="User" />
                         </th>
                         <th
                             className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
@@ -211,23 +299,47 @@ const OrderTable = forwardRef((props, ref) => {
                         >
                             CreatedDate<SortArrow columnKey="CreatedDate" />
                         </th>
+                        <th
+                            className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
+                            onClick={() => requestSort('ExpiredDate')}
+                        >
+                            ExpiredDate<SortArrow columnKey="ExpiredDate" />
+                        </th>
+                        <th
+                            className="cursor-pointer text-center px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
+                        >
+                            Expired
+                        </th>
+                        <th className="w-28 px-4 py-3 text-center text-md text-gray-50 font-bold">
+                            Actions
+                        </th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-600">
                     {paginatedOrders.length === 0 ? (
                         <tr>
-                        <td colSpan={5} className="px-4 py-4 text-center text-gray-400">
+                        <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
                             No data found.
                         </td>
                         </tr>
                     ) : (
                         paginatedOrders.map((item, index) => (
                         <tr key={index}>
-                            <td className="px-4 py-3">{item.Id ?? '-'}</td>
-                            <td className="px-4 py-3">{item.UserId ?? '-'}</td>
+                            {/* <td className="px-4 py-3">{item.Id ?? '-'}</td> */}
+                            <td className={`px-4 py-3 ${isExpiredOrToday(item.ExpiredDate) ? 'text-red-500' : ''}`}>{item.Username ?? '-'}</td>
                             <td className="px-4 py-3">{item.PackageId ?? '-'}</td>
                             <td className="px-4 py-3">{item.TotalPrice ?? '-'}</td>
                             <td className="px-4 py-3">{formatDateTime(item.CreatedDate)}</td>
+                            <td className="px-4 py-3">{formatDateTime(item.ExpiredDate)}</td>
+                            <td className="px-4 py-3 text-center">{checkIsExpired(item.isExpired) ? <FontAwesomeIcon icon={faCheck}/> : <FontAwesomeIcon icon={faXmark}/>}</td>
+                            <td className="px-4 py-3 text-right flex flex-row gap-2 justify-end">
+                                <button
+                                    onClick={() => setExpired(item.AccountId, item.ScreenId, item.UserId, item.Id)}
+                                    className="rounded-md border px-3 py-1 text-sm shadow-sm cursor-pointer"
+                                >
+                                    ยืนยันวันหมดอายุ
+                                </button>
+                            </td>
                         </tr>
                         ))
                     )}

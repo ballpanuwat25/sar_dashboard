@@ -290,12 +290,7 @@ const UserTable = forwardRef((props, ref) => {
                 <table className="min-w-full divide-y divide-zinc-600 bg-zinc-800">
                     <thead>
                     <tr>
-                        <th
-                            className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
-                            onClick={() => requestSort('Id')}
-                        >
-                            Id<SortArrow columnKey="Id" />
-                        </th>
+
                         <th
                             className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
                             onClick={() => requestSort('Username')}
@@ -316,14 +311,13 @@ const UserTable = forwardRef((props, ref) => {
                     <tbody className="divide-y divide-zinc-600">
                     {paginatedUsers.length === 0 ? (
                         <tr>
-                        <td colSpan={4} className="px-4 py-4 text-center text-gray-400">
+                        <td colSpan={3} className="px-4 py-4 text-center text-gray-400">
                             No data found.
                         </td>
                         </tr>
                     ) : (
                         paginatedUsers.map((item, index) => (
                         <tr key={index}>
-                            <td className="px-4 py-3">{item.Id ?? '-'}</td>
                             <td className="px-4 py-3">{item.Username ?? '-'}</td>
                             <td className="px-4 py-3">{formatDateTime(item.CreatedDate)}</td>
                             <td className="px-4 py-3 text-right flex flex-row gap-2 justify-end">

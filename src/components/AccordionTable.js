@@ -2,6 +2,7 @@ import React, { useImperativeHandle, useState, useEffect, forwardRef } from 'rea
 import { fetchAccounts } from '../lib/api';
 import { toast } from 'react-toastify';
 import AccountModal from './AccountModal'
+import CardScreen from './CardScreen'
 
 const AccordionTable = forwardRef((props, ref) => {
   const [openIndex, setOpenIndex] = useState(null);
@@ -16,9 +17,15 @@ const AccordionTable = forwardRef((props, ref) => {
 
   const loadAccounts = async () => {
     try {
-      const data = await fetchAccounts();  // สมมติ fetchAccounts() ดึงข้อมูลทั้งหมด
-      console.log('data: ', data)
-      setAccounts(data);
+      const data = await fetchAccounts();
+      const accountsWithState = data.map(acc => ({
+        ...acc,
+        Screens: acc.Screens ?? [] // ทำให้ Screens เป็น array
+      }));
+
+      // console.log('data:', data);
+      // console.log('accountsWithState:', accountsWithState);
+      setAccounts(accountsWithState);
     } catch (error) {
       console.error('Error loading accounts:', error);
       toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
@@ -109,41 +116,13 @@ const AccordionTable = forwardRef((props, ref) => {
       toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + error.message);
     }
   };
-
-  function isNearEndDate(endDateStr) {
-    if (!endDateStr) return false;
   
-    // ฟังก์ชันช่วยตัดเวลาออก เหลือแค่วันที่เท่านั้น
-    function toDateOnly(dateInput) {
-      const d = new Date(dateInput);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
-  
-    const now = toDateOnly(new Date());
-    const endDate = toDateOnly(endDateStr);
-  
-    const diffDays = (endDate - now) / (24 * 60 * 60 * 1000);
-  
-    if (diffDays < 0) {
-      // หมดไปแล้ว
-      return "text-red-500";
-    } else if (diffDays >= 0 && diffDays <= 1) {
-      // ใกล้หมดใน 1 วัน
-      return "text-orange-500";
-    } else {
-      // ยังไม่ใกล้หมด
-      return "";
-    }
-  }  
-
   return (
-    <>
+    <div className="w-full">
       <div className="overflow-x-auto border border-zinc-600 rounded-lg shadow-sm">
         <table className="min-w-full divide-y divide-zinc-600 bg-zinc-800">
           <thead className="">
             <tr>
-              <th className="px-4 py-3 text-left text-md text-gray-50 font-bold">Id</th>
               <th className="px-4 py-3 text-left text-md text-gray-50 font-bold">Account</th>
               <th className="px-4 py-3 text-left text-md text-gray-50 font-bold">Password</th>
               <th className="w-28 px-4 py-3 text-center text-md text-gray-50 font-bold">Actions</th>
@@ -153,7 +132,6 @@ const AccordionTable = forwardRef((props, ref) => {
             {accounts.map((item, index) => (
               <React.Fragment key={index}>
                 <tr className="">
-                  <td className="px-4 py-3">{item.Id ?? '-'}</td>
                   <td className="px-4 py-3">{item.Email ?? '-'}</td>
                   <td className="px-4 py-3">{item.NetflixPassword ?? '-'}</td>
                   <td className="px-4 py-3 text-right flex flex-row gap-2">
@@ -173,27 +151,14 @@ const AccordionTable = forwardRef((props, ref) => {
                 </tr>
                 {openIndex === index && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-3">
-                    <div className="text-md">
+                    <td colSpan={3} className="px-4 py-3">
+                    <div className="text-sm flex flex-row w-full text-center gap-4 justify-between">
                       {item.Screens.map((screen, index) => (
-                          <div
-                          key={index}
-                          className={`py-2 ${index !== item.Screens.length - 1 ? 'border-b border-gray-300' : ''}`}
-                          >
-                          <div className="font-semibold">Screen: {screen.screenId}</div>
-                          <div>PIN: {screen.pin}</div>
-                          <div>Screen Name: {screen.screenName}</div>
+                          <div key={index} className="w-full">
+                          <div className="mb-2">Screen Name: {screen.screenName}</div>
 
-                          <div className="mt-1">
-                              {screen.users.map((u, i) => {
-                                const nearEnd = isNearEndDate(u.expDate);
-                                return(
-                                  <div key={i} className="ml-4">
-                                      <span className={`font-medium ${nearEnd}`}>@ {u.userName ?? u.userId}</span> - {u.packageName} | start: {u.startDate}, end: {u.expDate}
-                                  </div>
-                                )})
-                              }
-                          </div>
+                          <CardScreen users={screen.users} accId={item.Id} _screenId={screen.screenId} screens={item.Screens} onUpdateScreens={(newScreens) => {setAccounts(prev => prev.map(a => a.Id === item.Id ? { ...a, Screens: newScreens } : a))}} />
+                          <div className="mt-2">PIN: {screen.pin}</div>
                           </div>
                       ))}
                       </div>
@@ -216,7 +181,7 @@ const AccordionTable = forwardRef((props, ref) => {
           action={"แก้ไข"}
         />
       )}
-    </>
+    </div>
   );
 });
 

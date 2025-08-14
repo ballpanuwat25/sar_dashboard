@@ -16,7 +16,7 @@ export default function AccountModal({
       <div className="relative bg-white rounded-lg p-6 w-96 max-w-full">
         <h2 className="text-xl font-bold mb-4 text-zinc-900">{action} Account</h2>
 
-        {action == "เพิ่ม" ? 
+        {/* {action == "เพิ่ม" ? 
           <label className="block mb-2 text-zinc-900 font-semibold">
             ID:
             <input
@@ -27,7 +27,7 @@ export default function AccountModal({
             />
           </label>
         : <></>
-        }
+        } */}
         
         <label className="block mb-2 text-zinc-900 font-semibold">
           Email:

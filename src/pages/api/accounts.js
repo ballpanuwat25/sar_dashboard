@@ -6,14 +6,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// function addDays(dateStr, daysToAdd) {
-//   const date = new Date(dateStr);
-//   date.setDate(date.getDate() + daysToAdd);
-//   const yyyy = date.getFullYear();
-//   const mm = (date.getMonth() + 1).toString().padStart(2, '0');
-//   const dd = date.getDate().toString().padStart(2, '0');
-//   return `${yyyy}-${mm}-${dd}`;
-// }
+async function getLatestUserId() {
+  const [rows] = await connection.execute(
+    "SELECT Id FROM Accounts WHERE Id LIKE 'ACC%' ORDER BY CAST(SUBSTRING(Id, 4) AS UNSIGNED) DESC LIMIT 1"
+  );
+  if (rows.length > 0) return rows[0].Id;
+  return null;
+}
+
+async function genId() {
+  const latest = await getLatestUserId();
+  const num = latest ? parseInt(latest.replace('ACC',''), 10) : 0;
+  return `ACC${(num+1).toString().padStart(3,'0')}`;
+}
 
 export default async function handler(req, res) {
   // Handle CORS preflight request
@@ -84,47 +89,34 @@ export default async function handler(req, res) {
             let packageNames = [];
 
             if (userObj[u.userId]) {
-              // const date = userObj[u.userId].startDate.toISOString().split('T')[0];
-
-              // const time = new Date(userObj[u.userId].startDate.toISOString());
-              // time.setHours(time.getUTCHours());
-
-              // const pad = (n) => n.toString().padStart(2, '0');
-              // const formatted = `${pad(time.getUTCHours())}:${pad(time.getUTCMinutes())}`;
-
               u.userName = userObj[u.userId].userName;
-              // u.startDate = date;
-              // u.time = formatted;
-              delete u.userId;
             }
 
             for (let p of u.packageId || []) {
               if (packageObj[p]) {
                 packageNames.push(packageObj[p].packageName);
-
-                // const startDate = u.startDate;
-                // const daysToAdd = packageObj[p].day;
-                // u.endDate = addDays(startDate, daysToAdd);
               }
             }
 
             u.packageName = packageNames.join(', ');
-            delete u.packageId;
           }
         }
 
         acc.Screens = screens; // เก็บกลับเข้า accounts
       }
 
+
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Access-Control-Allow-Origin', corsHeaders['Access-Control-Allow-Origin']);
       return res.status(200).json(accounts);
 
     } else if (req.method === 'POST') {
-      const { Id, Email, NetflixPassword, Screens } = req.body;
+      const { Email, NetflixPassword, Screens } = req.body;
 
-      if (!Id || !Email || !NetflixPassword || !Screens) {
-        return res.status(400).json({ error: 'ข้อมูลไม่ครบถ้วน (Id, Email, NetflixPassword, Screens ต้องมี)' });
+      const Id = await genId();
+
+      if (!Email || !NetflixPassword || !Screens) {
+        return res.status(400).json({ error: 'ข้อมูลไม่ครบถ้วน (Email, NetflixPassword, Screens ต้องมี)' });
       }
 
       const [result] = await connection.execute(
@@ -140,6 +132,8 @@ export default async function handler(req, res) {
       if (!accountId || !updates || typeof updates !== 'object') {
         return res.status(400).json({ error: "Missing or invalid 'accountId' or 'updates' in request body" });
       }
+
+      console.log('updates:', updates)
 
       const fields = [];
       const values = [];
