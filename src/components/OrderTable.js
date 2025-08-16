@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
-import { fetchOrders, fetchAccounts, updateAccount } from '@/lib/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { fetchAccounts, updateAccount } from '@/lib/api';
 import { toast } from 'react-toastify';
 
 import dynamic from 'next/dynamic';
@@ -8,41 +8,21 @@ const FontAwesomeIcon = dynamic(
     { ssr: false } 
 );
 
+import { useSearch } from '@/context/SearchContext';
+import Dropdown from "@/components/Dropdown";
+
 import { faChevronUp, faChevronDown, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-const OrderTable = forwardRef((props, ref) => {
-    const [orders, setOrders] = useState([]);
+const OrderTable = ({orders,onReload}) => {
     const [sortConfig, setSortConfig] = useState({ key: 'Id', direction: 'asc' });
 
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
-    const loadOrders = async () => {
-      try {
-        const data = await fetchOrders();
-        setOrders(data);
-
-        console.log('data --> ', data)
-
-        let total = 0
-        for(const d of data) {
-            total += d.TotalPrice
-        }
-
-        console.log('total:' , total)
-      } catch (error) {
-        console.error('Error loading Orders:', error);
-        toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
-      }
-    };
-
-    useEffect(() => {
-        loadOrders();
-    }, []);
-
-    useImperativeHandle(ref, () => ({
-        reload: loadOrders
-    }));
+    const { searchTerm } = useSearch();
+    const filtered = orders.filter(item =>
+        item.Username.toLowerCase().includes((searchTerm || "").toLowerCase())
+    );
 
     // เมื่อเปลี่ยน rowsPerPage ให้ reset หน้าเป็น 1
     useEffect(() => {
@@ -58,9 +38,9 @@ const OrderTable = forwardRef((props, ref) => {
     };
 
     const sortedOrders = useMemo(() => {
-        if (!sortConfig.key) return orders;
+        if (!sortConfig.key) return filtered;
     
-        const sorted = [...orders].sort((a, b) => {
+        const sorted = [...filtered].sort((a, b) => {
           let aValue = a[sortConfig.key];
           let bValue = b[sortConfig.key];
     
@@ -83,7 +63,7 @@ const OrderTable = forwardRef((props, ref) => {
           return 0;
         });
         return sorted;
-    }, [orders, sortConfig]);
+    }, [filtered, sortConfig]);
     
     // ฟังก์ชันแสดง icon บอกทิศทาง sort
     const SortArrow = ({ columnKey }) => {
@@ -147,18 +127,18 @@ const OrderTable = forwardRef((props, ref) => {
         setCurrentPage((page) => Math.min(page + 1, totalPages));
     };
 
-    function isExpiredOrToday(dateString) {
-        // แยก YYYY-MM-DD HH:mm:ss
-        const [datePart, timePart] = dateString.split(' ');
-        const [year, month, day] = datePart.split('-').map(Number);
-        const [hour, minute, second] = timePart.split(':').map(Number);
-    
-        // สร้าง Date แบบ local
-        const targetDate = new Date(year, month - 1, day, hour, minute, second);
-    
+    function isNearEndDate(endDateStr) {
+        if (!endDateStr) return false;
+
         const now = new Date();
-    
-        return now >= targetDate;
+        const endDate = new Date(endDateStr);
+
+        endDate.setHours(endDate.getHours() - 7);
+
+        const diffMs = endDate - now;
+        const diffDays = diffMs / (24 * 60 * 60 * 1000);
+
+        return diffDays < 0
     }
     
     const setExpired = async (accountId, SID, UID, OID) => {
@@ -170,11 +150,7 @@ const OrderTable = forwardRef((props, ref) => {
 
             if (screenId == SID) {
                 s.users = s.users.filter(user => {
-                    const shouldKeep = user.userId !== UID || !isExpiredOrToday(user.expDate);
-                    // console.log('a:', user.userId);
-                    // console.log('b:', user.expDate);
-                    // console.log('c:', shouldKeep);
-                    // console.log('d:', UID);
+                    const shouldKeep = user.userId !== UID || !isNearEndDate(user.expDate);
                     return shouldKeep;
                 });
             }
@@ -207,15 +183,9 @@ const OrderTable = forwardRef((props, ref) => {
         const result = await updateAccount(accountId, { Screens: screens });
         toast.success('อัพเดตสำเร็จ: ',result.message); // "Account updated successfully"
 
-        loadOrders();
-        
-    }
-
-    function isExpiredOrToday(dateString) {
-        const targetDate = new Date(dateString); // วันที่เป้าหมาย
-        const now = new Date(); // เวลาปัจจุบัน
-    
-        return now >= targetDate;
+        if (onReload) {
+            await onReload();
+        }
     }
 
     function checkIsExpired(isExpired) {
@@ -226,22 +196,27 @@ const OrderTable = forwardRef((props, ref) => {
         return false;
     }
 
+    const numOptions = [
+        {"Key": 5, "Value": 5},
+        {"Key": 10, "Value": 10},
+        {"Key": 20, "Value": 20},
+        {"Key": 50, "Value": 50},
+    ]
+
     return (
         <div>
             {/* Dropdown เลือกจำนวนแถว */}
             <div className="mb-4 flex flex-row justify-between items-center gap-2">
                 <div className="flex flex-row gap-2 items-center">
                     <label htmlFor="rowsPerPage" className="text-gray-200">Rows per page:</label>
-                    <select
-                        id="rowsPerPage"
-                        className="rounded bg-zinc-700 text-white px-2 py-2"
-                        value={rowsPerPage}
-                        onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                    >
-                        {[5, 10, 20, 50].map(num => (
-                        <option key={num} value={num}>{num}</option>
-                        ))}
-                    </select>
+                    <Dropdown options={numOptions} onSelect={(rowsPerPage) => setRowsPerPage(rowsPerPage)} placeholder={'5'}
+                        style={
+                            {
+                                'input-bg': 'bg-zinc-700', 'options-bg': 'bg-white', 'options-hover': 'bg-gray-100', 'input-text': 'text-gray-400', 
+                                'options-text': 'text-gray-400', 'border-color' : '', 'border' : '', 'input_width': 'w-14'
+                            }
+                        } 
+                    />
                 </div>
 
                 <div className="flex justify-between items-center text-gray-300 gap-4">
@@ -269,12 +244,6 @@ const OrderTable = forwardRef((props, ref) => {
                 <table className="min-w-full divide-y divide-zinc-600 bg-zinc-800">
                     <thead>
                     <tr>
-                        {/* <th
-                            className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
-                            onClick={() => requestSort('Id')}
-                        >
-                            Id<SortArrow columnKey="Id" />
-                        </th> */}
                         <th
                             className="cursor-pointer px-4 py-3 text-left text-md text-gray-50 font-bold select-none"
                             onClick={() => requestSort('User')}
@@ -326,7 +295,7 @@ const OrderTable = forwardRef((props, ref) => {
                         paginatedOrders.map((item, index) => (
                         <tr key={index}>
                             {/* <td className="px-4 py-3">{item.Id ?? '-'}</td> */}
-                            <td className={`px-4 py-3 ${isExpiredOrToday(item.ExpiredDate) ? 'text-red-500' : ''}`}>{item.Username ?? '-'}</td>
+                            <td className={`px-4 py-3 ${isNearEndDate(item.ExpiredDate) ? 'text-red-500' : ''}`}>{item.Username ?? '-'}</td>
                             <td className="px-4 py-3">{item.PackageId ?? '-'}</td>
                             <td className="px-4 py-3">{item.TotalPrice ?? '-'}</td>
                             <td className="px-4 py-3">{formatDateTime(item.CreatedDate)}</td>
@@ -348,7 +317,6 @@ const OrderTable = forwardRef((props, ref) => {
             </div>
         </div>
     )
-});
+};
 
-OrderTable.displayName = 'OrderTable';
 export default OrderTable;

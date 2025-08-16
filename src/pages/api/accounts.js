@@ -111,17 +111,17 @@ export default async function handler(req, res) {
       return res.status(200).json(accounts);
 
     } else if (req.method === 'POST') {
-      const { Email, NetflixPassword, Screens } = req.body;
+      const { Email, NetflixPassword, PaymentDueDate, Screens } = req.body;
 
       const Id = await genId();
 
-      if (!Email || !NetflixPassword || !Screens) {
-        return res.status(400).json({ error: 'ข้อมูลไม่ครบถ้วน (Email, NetflixPassword, Screens ต้องมี)' });
+      if (!Email || !NetflixPassword || !PaymentDueDate || !Screens) {
+        return res.status(400).json({ error: 'ข้อมูลไม่ครบถ้วน (Email, NetflixPassword, PaymentDueDate, Screens ต้องมี)' });
       }
 
       const [result] = await connection.execute(
-        `INSERT INTO Accounts (Id, Email, NetflixPassword, Screens, CreatedDate, ModifiedDate) VALUES (?, ?, ?, ?, ?, ?)`,
-        [Id, Email, NetflixPassword, Screens, formatDate, formatDate]
+        `INSERT INTO Accounts (Id, Email, NetflixPassword, Screens, PaymentDueDate, CreatedDate, ModifiedDate) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [Id, Email, NetflixPassword, Screens, PaymentDueDate, formatDate, formatDate]
       );
 
       return res.status(201).json({ message: 'เพิ่มบัญชีสำเร็จ', insertId: result.insertId });

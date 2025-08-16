@@ -141,9 +141,9 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
         const diffDays = diffMs / (24 * 60 * 60 * 1000);
 
         if (diffDays < 0) {
-            return "text-red-500"; // หมดไปแล้ว
+            return "text-red-600"; // หมดไปแล้ว
         } else if (diffDays <= 1) {
-            return "text-orange-500"; // ใกล้หมด
+            return "text-orange-400"; // ใกล้หมด
         } else {
             return "";
         }
@@ -157,7 +157,7 @@ export default function Card({ users, accId, _screenId, screens, onUpdateScreens
                 <div key={i} className="p-2 bg-zinc-200 rounded w-full text-left flex flex-col gap-2 justify-between items-left">
                     {/* <span className={`font-medium`}>@ {u.userName ?? u.userId}</span> - {u.packageName} | start: {u.startDate}, end: {u.expDate} */}
                     <div>
-                        <p className="text-zinc-900 text-base text-xs"><b>User:</b> <span className={nearEnd}>{u.userName ?? u.userId}</span></p>
+                        <p className="text-zinc-900 text-base text-xs"><b>User: <span className={nearEnd}>{u.userName ?? u.userId}</span></b> </p>
                         <p className="text-zinc-900 text-base text-xs"><b>Packages:</b> {u.packageName} </p>
                         <p className="text-zinc-900 text-base text-xs"><b>Start:</b> {u.startDate}</p>
                         <p className="text-zinc-900 text-base text-xs"><b>End:</b> {u.expDate}</p>

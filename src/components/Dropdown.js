@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 export default function Dropdown({ options =  [], onSelect, placeholder = "Select an option",
     style={
         'input-bg': 'bg-white', 'options-bg': 'bg-white', 'options-hover': 'bg-gray-100', 'input-text': 'text-gray-400', 
-        'options-text': 'text-zinc-900', 'border-color' : 'border-gray-300'
+        'options-text': 'text-gray-400', 'border-color' : 'border-gray-300', 'border': 'border', 'input_width': 'w-full'
     } 
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function Dropdown({ options =  [], onSelect, placeholder = "Selec
 
   const handleSelect = (option) => {
     setSelected(option);
-    onSelect(option.Id);
+    onSelect(option.Key);
     setIsOpen(false);
   };
 
@@ -37,12 +37,12 @@ export default function Dropdown({ options =  [], onSelect, placeholder = "Selec
   }, [isOpen]);
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className={`relative ${style['input_width']}`} ref={dropdownRef}>
       <div
-        className={`border ${style['border-color']} rounded-md p-2 ${style['input-bg']} cursor-pointer flex justify-between items-center`}
+        className={`${style['border']} ${style['border-color']} rounded-md p-2 ${style['input-bg']} cursor-pointer flex justify-between items-center`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={`font-normal ${selected ? style['options-text'] : style['input-text']}`}>{selected ? (selected.Username) : placeholder}</span>
+        <span className={`font-normal ${selected ? style['options-text'] : style['input-text']}`}>{selected ? (selected.Value) : placeholder}</span>
         <svg
           className={`w-4 h-4 transform transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -55,15 +55,15 @@ export default function Dropdown({ options =  [], onSelect, placeholder = "Selec
       </div>
 
       {isOpen && (
-        <div className={`absolute mt-1 w-full ${style['options-bg']} border rounded-lg shadow-lg z-10`}>
+        <div className={`absolute mt-1 w-full ${style['options-bg']} overflow-hidden border rounded-lg shadow-lg z-10`}>
           <ul className="max-h-48 overflow-y-auto">
              {options.map((option) => (
                 <li
-                  key={option.Id}
+                  key={option.Key}
                   onClick={() => handleSelect(option)}
                   className={`p-2 hover:${style['options-hover']} rounded ${style['options-text']} cursor-pointer`}
                 >
-                  {option?.Username}
+                  {option?.Value}
                 </li>
               ))}
           </ul>

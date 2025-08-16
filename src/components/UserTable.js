@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useImperativeHandle, forwardRef } 
 import { fetchUsers } from '@/lib/api';
 import UserModal from './UserModal';
 import { toast } from 'react-toastify';
+import { useSearch } from '@/context/SearchContext';
+import Dropdown from '@/components/Dropdown'
 
 import dynamic from 'next/dynamic';
 const FontAwesomeIcon = dynamic(
@@ -24,6 +26,8 @@ const UserTable = forwardRef((props, ref) => {
     const [username, setUsername] = useState('');
     const [createdDate, setCreatedDate] = useState('');
 
+    const { searchTerm } = useSearch();
+
     const loadUsers = async () => {
       try {
         const data = await fetchUsers();  // สมมติ fetchUsers() ดึงข้อมูลทั้งหมด
@@ -40,7 +44,7 @@ const UserTable = forwardRef((props, ref) => {
 
     useImperativeHandle(ref, () => ({
         reload: loadUsers
-      }));
+    }));
 
     useEffect(() => {
         const nowDate = new Date();
@@ -157,10 +161,14 @@ const UserTable = forwardRef((props, ref) => {
         setSortConfig({ key, direction });
     };
 
+    const filtered = users.filter(item =>
+      item.Username.toLowerCase().includes((searchTerm || "").toLowerCase())
+    );
+
     const sortedUsers = useMemo(() => {
-        if (!sortConfig.key) return users;
+        if (!sortConfig.key) return filtered;
     
-        const sorted = [...users].sort((a, b) => {
+        const sorted = [...filtered].sort((a, b) => {
           let aValue = a[sortConfig.key];
           let bValue = b[sortConfig.key];
     
@@ -183,7 +191,7 @@ const UserTable = forwardRef((props, ref) => {
           return 0;
         });
         return sorted;
-    }, [users, sortConfig]);
+    }, [filtered, sortConfig]);
     
     // ฟังก์ชันแสดง icon บอกทิศทาง sort
     const SortArrow = ({ columnKey }) => {
@@ -247,22 +255,28 @@ const UserTable = forwardRef((props, ref) => {
         setCurrentPage((page) => Math.min(page + 1, totalPages));
     };
 
+    const numOptions = [
+      {"Key": 5, "Value": 5},
+      {"Key": 10, "Value": 10},
+      {"Key": 20, "Value": 20},
+      {"Key": 50, "Value": 50},
+    ]
+
     return (
         <div>
             {/* Dropdown เลือกจำนวนแถว */}
             <div className="mb-4 flex flex-row justify-between items-center gap-2">
                 <div className="flex flex-row gap-2 items-center">
                     <label htmlFor="rowsPerPage" className="text-gray-200">Rows per page:</label>
-                    <select
-                        id="rowsPerPage"
-                        className="rounded bg-zinc-700 text-white px-2 py-2"
-                        value={rowsPerPage}
-                        onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                    >
-                        {[5, 10, 20, 50].map(num => (
-                        <option key={num} value={num}>{num}</option>
-                        ))}
-                    </select>
+
+                    <Dropdown options={numOptions} onSelect={(rowsPerPage) => setRowsPerPage(rowsPerPage)} placeholder={'5'}
+                        style={
+                            {
+                                'input-bg': 'bg-zinc-700', 'options-bg': 'bg-white', 'options-hover': 'bg-gray-100', 'input-text': 'text-gray-400', 
+                                'options-text': 'text-gray-400', 'border-color' : '', 'border' : '', 'input_width': 'w-14'
+                            }
+                        } 
+                    />
                 </div>
 
                 <div className="flex justify-between items-center text-gray-300 gap-4">

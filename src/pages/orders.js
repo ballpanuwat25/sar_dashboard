@@ -1,23 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import OrderTable from '@/components/OrderTable';
 import OrderModal from '@/components/OrderModal';
+import Dropdown from '@/components/Dropdown';
 
-import { fetchUsers, fetchPackages, fetchAccounts, updateAccount } from '@/lib/api';
+import { fetchUsers, fetchPackages, fetchAccounts, updateAccount, fetchOrders } from '@/lib/api';
 
 import { toast } from 'react-toastify';
 
 export default function Orders() {
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(null);
+    const [orders, setOrders] = useState([]);
+    
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedValue, setSelectedValue] = useState(null);
   
     const [userId, setUserId] = useState('');
     const [selected, setSelected] = useState([]); //packages
     const [accountId, setAccountId] = useState('');
     const [screenId, setScreenId] = useState(1);
     const [totalPrice, setTotalPrice] = useState('');
-
-    const tableRef = useRef(null);
 
     const openModalForCreate = () => {
         setUserId('');
@@ -130,7 +130,7 @@ export default function Orders() {
             toast.success("เพิ่มบัญชีสำเร็จ");
             setIsModalOpen(false);
         
-            tableRef.current?.reload();
+            loadOrders();
         
         } catch (error) {
             toast.error("เกิดข้อผิดพลาด: " + error.message);
@@ -170,26 +170,100 @@ export default function Orders() {
       }
     }
 
+    const [totals, setTotal] = useState(0);
+
     useEffect(() => {
       loadUsers();
       loadPackages();
       loadAccounts();
+      loadOrders();
     }, []);
+
+    const loadOrders = async () => {
+      try {
+        const data = await fetchOrders();
+        setOrders(data);
+
+        let total = 0
+        for(const d of data) {
+            total += d.TotalPrice
+        }
+        
+        setTotal(total)
+      } catch (error) {
+        console.error('Error loading Orders:', error);
+        toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      }
+    };
+    
+    const [filter, setFilter] = useState('')
+    const options = [
+      {
+        "Key": 0,
+        "Value": "ทั้งหมด"
+      },
+      {
+        "Key": 1,
+        "Value": "ยังไม่หมดอายุ"
+      },
+      {
+        "Key": 2,
+        "Value": "ยังไม่ยืนยัน"
+      },
+      {
+        "Key": 3,
+        "Value": "หมดอายุแล้ว"
+      }
+    ]
+
+    function isExpired(dateStr) {
+      if (!dateStr) return false;
+      const now = new Date();
+      const endDate = new Date(dateStr);
+      endDate.setHours(endDate.getHours() - 7); // ปรับเวลาเป็นไทย
+      return endDate < now;
+    }
+
+    const ordersFiltered = orders.filter(order => {
+      switch (filter) {
+        case 1: // ยังไม่หมดอายุ
+          return !isExpired(order.ExpiredDate);
+    
+        case 2: // ยังไม่ยืนยัน = หมดอายุแล้ว แต่ isExpired flag เป็น 0
+          return isExpired(order.ExpiredDate) && order.isExpired === 0;
+    
+        case 3: // หมดอายุแล้ว (ทั่วไป)
+          return isExpired(order.ExpiredDate) && order.isExpired === 1;
+    
+        default: // 0 หรือค่าอื่น ๆ = ทั้งหมด
+          return true;
+      }
+    });
 
     return (
       <main className="p-6 min-h-screen bg-zinc-800 rounded-lg">
         <div className="w-full flex flex-col">
           <div className="flex flex-row justify-between items-center w-full mb-4">
-            <h1 className="text-2xl font-semibold">Orders</h1>
-            <button
-              onClick={openModalForCreate}
-              className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
-            >
-              สร้าง
-            </button>
+            <h1 className="text-2xl font-semibold">Orders - {totals} THB</h1>
+              <div className="flex flex-row gap-2 w-50">
+                <Dropdown options={options} placeholder={'ทั้งหมด'} onSelect={(filter) => setFilter(filter)}
+                    style={
+                      {
+                          'input-bg': 'bg-zinc-700', 'options-bg': 'bg-white', 'options-hover': 'bg-gray-100', 'input-text': 'text-gray-400', 
+                          'options-text': 'text-gray-400', 'border-color' : '', 'border' : '', 'input_width': 'w-full'
+                      }
+                    } 
+                />
+                <button
+                  onClick={openModalForCreate}
+                  className="rounded-md bg-white text-black px-3 py-2 text-sm shadow-sm cursor-pointer"
+                >
+                  สร้าง
+                </button>
+              </div>
           </div>
 
-          <OrderTable ref={tableRef}/>
+          <OrderTable orders={ordersFiltered} onReload={loadOrders}/>
 
           <OrderModal
               isOpen={isModalOpen}

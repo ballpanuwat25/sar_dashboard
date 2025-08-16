@@ -1,5 +1,6 @@
 import SearchableDropdown from './SearchableDropdown';
 import MultiSelectDropdown from './MultiSelectDropdown';
+import Dropdown from './Dropdown';
 
 export default function OrderModal({
   setUserId,
@@ -19,6 +20,14 @@ export default function OrderModal({
 }) {
 
   if (!isOpen) return null;
+
+  const numOptions = [
+    {"Key": 1, "Value": 1},
+    {"Key": 2, "Value": 2},
+    {"Key": 3, "Value": 3},
+    {"Key": 4, "Value": 4},
+    {"Key": 5, "Value": 5},
+  ]
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -52,16 +61,7 @@ export default function OrderModal({
 
         <label className="block mb-2 text-zinc-900 font-semibold">
           ScreenId:
-          <select
-              id="screenId"
-              className="rounded border border-gray-300 px-2 py-2 w-full"
-              value={screenId}
-              onChange={(e) => setScreenId(Number(e.target.value))}
-          >
-              {[1, 2, 3, 4, 5].map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-          </select>
+          <Dropdown options={numOptions} onSelect={(screenId) => setScreenId(screenId)} placeholder={'1'}/>
         </label>
         <label className="block mb-2 text-zinc-900 font-semibold">
           TotalPrice:

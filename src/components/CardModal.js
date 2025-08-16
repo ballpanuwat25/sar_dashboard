@@ -1,3 +1,5 @@
+import Dropdown from './Dropdown';
+
 export default function CardModal({
     screenId, setScreenId,
     createdDate, setCreatedDate,
@@ -8,38 +10,23 @@ export default function CardModal({
 
   if (!isOpen) return null;
 
+  const numOptions = [
+    {"Key": 1, "Value": 1},
+    {"Key": 2, "Value": 2},
+    {"Key": 3, "Value": 3},
+    {"Key": 4, "Value": 4},
+    {"Key": 5, "Value": 5},
+  ]
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-zinc-900 opacity-75"></div>  {/* background overlay */}
       <div className="relative bg-white rounded-lg p-6 w-96 max-w-full">
         <h2 className="text-xl font-bold mb-4 text-zinc-900">แก้ไข Screen</h2>
-        
-        {/* <label className="block mb-2 text-zinc-900 font-semibold">
-          User:
-          <SearchableDropdown
-            options={usersOptions}
-            onSelect={(userId) => setUserId(userId)}
-            placeholder="Select User"
-          />
-        </label> */}
-
-        {/* <label className="block text-zinc-900 font-semibold">
-          Packages:
-        </label>
-        <MultiSelectDropdown options={packagesOptions} selected={selected} setSelected={setSelected} onTotalPriceChange={0}  /> */}
 
         <label className="block text-left mb-2 text-zinc-900 font-semibold">
           Screen:
-          <select
-              id="screenId"
-              className="mt-1 rounded border border-gray-300 px-2 py-2 w-full"
-              value={screenId}
-              onChange={(e) => setScreenId(Number(e.target.value))}
-          >
-              {[1, 2, 3, 4, 5].map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-          </select>
+          <Dropdown options={numOptions} onSelect={(screenId) => setScreenId(screenId)} placeholder={'1'}/>
         </label>
 
         <label className="block text-left mb-2 text-zinc-900 font-semibold">
